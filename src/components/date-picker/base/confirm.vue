@@ -1,20 +1,38 @@
 <template>
     <div :class="[prefixCls + '-confirm']">
-        <i-button size="small" type="text" @click="handleClear">清空</i-button>
-        <i-button size="small" type="primary" @click="handleSuccess">确定</i-button>
+        <span :class="timeClasses" v-if="showTime" @click="handleToggleTime">
+            <template v-if="isTime">{{ t('i.datepicker.selectDate') }}</template>
+            <template v-else>{{ t('i.datepicker.selectTime') }}</template>
+        </span>
+        <i-button size="small" type="text" @click="handleClear">{{ t('i.datepicker.clear') }}</i-button>
+        <i-button size="small" type="primary" @click="handleSuccess">{{ t('i.datepicker.ok') }}</i-button>
     </div>
 </template>
 <script>
     import iButton from '../../button/button.vue';
+    import Locale from '../../../mixins/locale';
 
     const prefixCls = 'ivu-picker';
 
     export default {
+        mixins: [ Locale ],
         components: { iButton },
+        props: {
+            showTime: false,
+            isTime: false,
+            timeDisabled: false
+        },
         data () {
             return {
                 prefixCls: prefixCls
             };
+        },
+        computed: {
+            timeClasses () {
+                return {
+                    [`${prefixCls}-confirm-time-disabled`]: this.timeDisabled
+                };
+            }
         },
         methods: {
             handleClear () {
@@ -22,6 +40,10 @@
             },
             handleSuccess () {
                 this.$emit('on-pick-success');
+            },
+            handleToggleTime () {
+                if (this.timeDisabled) return;
+                this.$emit('on-pick-toggle-time');
             }
         }
     };

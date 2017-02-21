@@ -36,6 +36,10 @@
             checked: {
                 type: Boolean,
                 default: false
+            },
+            indeterminate: {
+                type: Boolean,
+                default: false
             }
         },
         data () {
@@ -62,7 +66,8 @@
                     `${prefixCls}`,
                     {
                         [`${prefixCls}-checked`]: this.selected,
-                        [`${prefixCls}-disabled`]: this.disabled
+                        [`${prefixCls}-disabled`]: this.disabled,
+                        [`${prefixCls}-indeterminate`]: this.indeterminate
                     }
                 ];
             },
@@ -94,6 +99,7 @@
                     this.$parent.change(this.model);
                 } else {
                     this.$emit('on-change', this.checked);
+                    this.$dispatch('on-form-change', this.checked);
                 }
             },
             updateModel () {

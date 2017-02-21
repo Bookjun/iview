@@ -2,7 +2,7 @@
     <div
         :class="[prefixCls]"
         v-clickoutside="handleClose">
-        <div v-el:reference>
+        <div v-el:reference :class="[prefixCls + '-rel']">
             <slot>
                 <i-input
                     :class="[prefixCls + '-editor']"
@@ -201,7 +201,7 @@
             },
             iconType () {
                 let icon = 'ios-calendar-outline';
-                if (this.type === 'time') icon = 'ios-clock-outline';
+                if (this.type === 'time' || this.type === 'timerange') icon = 'ios-clock-outline';
                 if (this.showClose) icon = 'ios-close';
                 return icon;
             },
@@ -253,6 +253,7 @@
         },
         methods: {
             handleClose () {
+                if (this.open !== null) return;
                 if (!this.disableClickOutSide) this.visible = false;
                 this.disableClickOutSide = false;
             },
@@ -294,6 +295,30 @@
                     }
 
                     correctDate = parser(correctValue, format);
+                } else if (type === 'time') {
+                    const parsedDate = parseDate(value, format);
+
+                    if (parsedDate instanceof Date) {
+                        if (this.disabledHours.length || this.disabledMinutes.length || this.disabledSeconds.length) {
+                            const hours = parsedDate.getHours();
+                            const minutes = parsedDate.getMinutes();
+                            const seconds = parsedDate.getSeconds();
+
+                            if ((this.disabledHours.length && this.disabledHours.indexOf(hours) > -1) ||
+                                (this.disabledMinutes.length && this.disabledMinutes.indexOf(minutes) > -1) ||
+                                (this.disabledSeconds.length && this.disabledSeconds.indexOf(seconds) > -1)) {
+                                correctValue = oldValue;
+                            } else {
+                                correctValue = formatDate(parsedDate, format);
+                            }
+                        } else {
+                            correctValue = formatDate(parsedDate, format);
+                        }
+                    } else {
+                        correctValue = oldValue;
+                    }
+
+                    correctDate = parseDate(correctValue, format);
                 } else {
                     const parsedDate = parseDate(value, format);
 
@@ -335,10 +360,17 @@
                 this.internalValue = '';
                 this.value = '';
                 this.$emit('on-clear');
+                this.$dispatch('on-form-change', '');
             },
             showPicker () {
                 if (!this.picker) {
+                    const type = this.type;
+
                     this.picker = new Vue(this.panel).$mount(this.$els.picker);
+                    if (type === 'datetime' || type === 'datetimerange') {
+                        this.confirm = true;
+                        this.picker.showTime = true;
+                    }
                     this.picker.value = this.internalValue;
                     this.picker.confirm = this.confirm;
                     this.picker.selectionMode = this.selectionMode;
@@ -357,24 +389,20 @@
 
                     this.picker.$on('on-pick', (date, visible = false) => {
                         if (!this.confirm) this.visible = visible;
-
-                        this.emitChange(date);
                         this.value = date;
                         this.picker.value = date;
                         this.picker.resetView && this.picker.resetView();
+                        this.emitChange(date);
                     });
 
                     this.picker.$on('on-pick-clear', () => {
                         this.handleClear();
                     });
                     this.picker.$on('on-pick-success', () => {
-//                        this.emitChange(this.value);
                         this.visible = false;
                         this.$emit('on-ok');
                     });
                     this.picker.$on('on-pick-click', () => this.disableClickOutSide = true);
-
-                    // todo $on('on-time-range')
                 }
                 if (this.internalValue instanceof Date) {
                     this.picker.date = new Date(this.internalValue.getTime());
@@ -384,13 +412,20 @@
                 this.picker.resetView && this.picker.resetView();
             },
             emitChange (date) {
-                const format = this.format || DEFAULT_FORMATS[this.type];
+                const type = this.type;
+                const format = this.format || DEFAULT_FORMATS[type];
                 const formatter = (
-                    TYPE_VALUE_RESOLVER_MAP[this.type] ||
+                    TYPE_VALUE_RESOLVER_MAP[type] ||
                     TYPE_VALUE_RESOLVER_MAP['default']
                 ).formatter;
 
-                this.$emit('on-change', formatter(date, format));
+                let newDate = formatter(date, format);
+                if (type === 'daterange' || type === 'timerange') {
+                    newDate = [newDate.split(RANGE_SEPARATOR)[0], newDate.split(RANGE_SEPARATOR)[1]];
+                }
+
+                this.$emit('on-change', newDate);
+                this.$dispatch('on-form-change', newDate);
             }
         },
         watch: {
@@ -400,7 +435,7 @@
                     this.$refs.drop.update();
                     if (this.open === null) this.$emit('on-open-change', true);
                 } else {
-                    if (this.picker) this.picker.resetView && this.picker.resetView();
+                    if (this.picker) this.picker.resetView && this.picker.resetView(true);
                     this.$refs.drop.destroy();
                     if (this.open === null) this.$emit('on-open-change', false);
                 }
@@ -413,6 +448,19 @@
             value: {
                 immediate: true,
                 handler (val) {
+                    const type = this.type;
+                    const parser = (
+                        TYPE_VALUE_RESOLVER_MAP[type] ||
+                        TYPE_VALUE_RESOLVER_MAP['default']
+                    ).parser;
+
+                    if (val && type === 'time' && !(val instanceof Date)) {
+                        val = parser(val, this.format || DEFAULT_FORMATS[type]);
+                    } else if (val && type === 'timerange' && Array.isArray(val) && val.length === 2 && !(val[0] instanceof Date) && !(val[1] instanceof Date)) {
+                        val = val.join(RANGE_SEPARATOR);
+                        val = parser(val, this.format || DEFAULT_FORMATS[type]);
+                    }
+
                     this.internalValue = val;
                 }
             },
@@ -432,6 +480,14 @@
         },
         ready () {
             if (this.open !== null) this.visible = this.open;
+        },
+        events: {
+            'on-form-blur' () {
+                return false;
+            },
+            'on-form-change' () {
+                return false;
+            }
         }
     };
 </script>

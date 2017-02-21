@@ -1,18 +1,18 @@
 <template>
     <div :class="classes">
         <div :class="[prefixCls+ '-list']" v-el:hours>
-            <ul @click="handleClickHours">
-                <li :class="getCellCls(item)" v-for="item in hoursList" v-show="!item.hide" :index="$index">{{ item.text < 10 ? '0' + item.text : item.text }}</li>
+            <ul :class="[prefixCls + '-ul']" @click="handleClickHours">
+                <li :class="getCellCls(item)" v-for="item in hoursList" v-show="!item.hide" :index="$index">{{ formatTime(item.text) }}</li>
             </ul>
         </div>
         <div :class="[prefixCls+ '-list']" v-el:minutes>
-            <ul @click="handleClickMinutes">
-                <li :class="getCellCls(item)" v-for="item in minutesList" v-show="!item.hide" :index="$index">{{ item.text < 10 ? '0' + item.text : item.text }}</li>
+            <ul :class="[prefixCls + '-ul']" @click="handleClickMinutes">
+                <li :class="getCellCls(item)" v-for="item in minutesList" v-show="!item.hide" :index="$index">{{ formatTime(item.text) }}</li>
             </ul>
         </div>
         <div :class="[prefixCls+ '-list']" v-show="showSeconds" v-el:seconds>
-            <ul @click="handleClickSeconds">
-                <li :class="getCellCls(item)" v-for="item in secondsList" v-show="!item.hide" :index="$index">{{ item.text < 10 ? '0' + item.text : item.text }}</li>
+            <ul :class="[prefixCls + '-ul']" @click="handleClickSeconds">
+                <li :class="getCellCls(item)" v-for="item in secondsList" v-show="!item.hide" :index="$index">{{ formatTime(item.text) }}</li>
             </ul>
         </div>
     </div>
@@ -27,15 +27,15 @@
         mixins: [Options],
         props: {
             hours: {
-                type: Number,
+                type: [Number, String],
                 default: 0
             },
             minutes: {
-                type: Number,
+                type: [Number, String],
                 default: 0
             },
             seconds: {
-                type: Number,
+                type: [Number, String],
                 default: 0
             },
             showSeconds: {
@@ -45,7 +45,8 @@
         },
         data () {
             return {
-                prefixCls: prefixCls
+                prefixCls: prefixCls,
+                compiled: false
             };
         },
         computed: {
@@ -154,11 +155,13 @@
                     const data = {};
                     data[type] = cell.text;
                     this.$emit('on-change', data);
-
-                    const from = this.$els[type].scrollTop;
-                    const to = 24 * this.getScrollIndex(type, cell.text);
-                    scrollTop(this.$els[type], from, to, 500);
                 }
+                this.$emit('on-pick-click');
+            },
+            scroll (type, index) {
+                const from = this.$els[type].scrollTop;
+                const to = 24 * this.getScrollIndex(type, index);
+                scrollTop(this.$els[type], from, to, 500);
             },
             getScrollIndex (type, index) {
                 const Type = firstUpperCase(type);
@@ -172,17 +175,33 @@
             },
             updateScroll () {
                 const times = ['hours', 'minutes', 'seconds'];
-                times.forEach(type => this.$els[type].style.overflow = 'hidden');
                 this.$nextTick(() => {
                     times.forEach(type => {
                         this.$els[type].scrollTop = 24 * this.getScrollIndex(type, this[type]);
                     });
-                    this.$nextTick(() => times.forEach(type => this.$els[type].style.overflow = 'auto'));
                 });
+            },
+            formatTime (text) {
+                return text < 10 ? '0' + text : text;
+            }
+        },
+        watch: {
+            hours (val) {
+                if (!this.compiled) return;
+                this.scroll('hours', val);
+            },
+            minutes (val) {
+                if (!this.compiled) return;
+                this.scroll('minutes', val);
+            },
+            seconds (val) {
+                if (!this.compiled) return;
+                this.scroll('seconds', val);
             }
         },
         compiled () {
             this.updateScroll();
+            this.$nextTick(() => this.compiled = true);
         }
     };
 </script>

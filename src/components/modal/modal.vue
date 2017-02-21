@@ -1,6 +1,6 @@
 <template>
-    <div :class="wrapClasses">
-        <div :class="maskClasses" v-show="visible" @click="mask" transition="fade"></div>
+    <div :class="maskClasses" v-show="visible" @click="mask" transition="fade"></div>
+    <div :class="wrapClasses" @click="handleWrapClick">
         <div :class="classes" :style="styles" v-show="visible" transition="ease">
             <div :class="[prefixCls + '-content']">
                 <a :class="[prefixCls + '-close']" v-if="closable" @click="close">
@@ -24,6 +24,7 @@
     import Icon from '../icon';
     import iButton from '../button/button.vue';
     import { getScrollBarSize } from '../../utils/assist';
+    import { t } from '../../locale';
 
     const prefixCls = 'ivu-modal';
 
@@ -51,11 +52,15 @@
             },
             okText: {
                 type: String,
-                default: '确定'
+                default () {
+                    return t('i.modal.okText');
+                }
             },
             cancelText: {
                 type: String,
-                default: '取消'
+                default () {
+                    return t('i.modal.cancelText');
+                }
             },
             loading: {
                 type: Boolean,
@@ -69,6 +74,10 @@
             },
             // for instance
             footerHide: {
+                type: Boolean,
+                default: false
+            },
+            scrollable: {
                 type: Boolean,
                 default: false
             }
@@ -120,6 +129,10 @@
                 if (this.maskClosable) {
                     this.close();
                 }
+            },
+            handleWrapClick (event) {
+                // use indexOf,do not use === ,because ivu-modal-wrap can have other custom className
+                if (event.target.getAttribute('class').indexOf(`${prefixCls}-wrap`) > -1) this.mask();
             },
             cancel () {
                 this.close();
@@ -192,18 +205,28 @@
             visible (val) {
                 if (val === false) {
                     this.buttonLoading = false;
-                    setTimeout(() => {
+                    this.timer = setTimeout(() => {
                         this.wrapShow = false;
                         this.removeScrollEffect();
                     }, 300);
                 } else {
+                    if (this.timer) clearTimeout(this.timer);
                     this.wrapShow = true;
-                    this.addScrollEffect();
+                    if (!this.scrollable) {
+                        this.addScrollEffect();
+                    }
                 }
             },
             loading (val) {
                 if (!val) {
                     this.buttonLoading = false;
+                }
+            },
+            scrollable (val) {
+                if (!val) {
+                    this.addScrollEffect();
+                } else {
+                    this.removeScrollEffect();
                 }
             }
         }

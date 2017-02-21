@@ -1,8 +1,10 @@
 <template>
     <div :class="[prefixCls + '-body-wrapper']">
         <div :class="[prefixCls + '-body']">
+            <div :class="[timePrefixCls + '-header']" v-if="showDate">{{ visibleDate }}</div>
             <div :class="[prefixCls + '-content']">
                 <time-spinner
+                    v-ref:time-spinner
                     :show-seconds="showSeconds"
                     :hours="hours"
                     :minutes="minutes"
@@ -15,6 +17,7 @@
                     @on-pick-click="handlePickClick"></time-spinner>
             </div>
             <Confirm
+                v-if="confirm"
                 @on-pick-clear="handlePickClear"
                 @on-pick-success="handlePickSuccess"></Confirm>
         </div>
@@ -25,32 +28,44 @@
     import Confirm from '../base/confirm.vue';
 
     import Mixin from './mixin';
+    import Locale from '../../../mixins/locale';
+
+    import { initTimeDate } from '../util';
 
     const prefixCls = 'ivu-picker-panel';
     const timePrefixCls = 'ivu-time-picker';
 
     export default {
-        mixins: [Mixin],
+        mixins: [ Mixin, Locale ],
         components: { TimeSpinner, Confirm },
         data () {
             return {
                 prefixCls: prefixCls,
                 timePrefixCls: timePrefixCls,
-                format: 'HH:mm:ss',
-                date: new Date(),
+                date: initTimeDate(),
                 value: '',
-                hours: 0,
-                minutes: 0,
-                seconds: 0,
+                showDate: false,
+                format: 'HH:mm:ss',
+                hours: '',
+                minutes: '',
+                seconds: '',
                 disabledHours: [],
                 disabledMinutes: [],
                 disabledSeconds: [],
-                hideDisabledOptions: false
+                hideDisabledOptions: false,
+                confirm: false
             };
         },
         computed: {
             showSeconds () {
                 return (this.format || '').indexOf('ss') !== -1;
+            },
+            visibleDate () {
+                const date = this.date;
+                const month = date.getMonth() + 1;
+                const tYear = this.t('i.datepicker.year');
+                const tMonth = this.t(`i.datepicker.month${month}`);
+                return `${date.getFullYear()}${tYear} ${tMonth}`;
             }
         },
         watch: {
@@ -68,6 +83,12 @@
             }
         },
         methods: {
+            handleClear() {
+                this.date = initTimeDate();
+                this.hours = '';
+                this.minutes = '';
+                this.seconds = '';
+            },
             handleChange (date, emit = true) {
                 if (date.hours !== undefined) {
                     this.date.setHours(date.hours);
@@ -82,7 +103,13 @@
                     this.seconds = this.date.getSeconds();
                 }
                 if (emit) this.$emit('on-pick', this.date, true);
+            },
+            updateScroll () {
+                this.$refs.timeSpinner.updateScroll();
             }
+        },
+        compiled () {
+            if (this.$parent && this.$parent.$options.name === 'DatePicker') this.showDate = true;
         }
     };
 </script>

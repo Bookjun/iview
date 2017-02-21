@@ -21,7 +21,7 @@
                 <span
                     :class="[datePrefixCls + '-header-label']"
                     @click="showMonthPicker"
-                    v-show="currentView === 'date'">{{ month + 1 + '月' }}</span>
+                    v-show="currentView === 'date'">{{ monthLabel }}</span>
                 <span
                     :class="iconBtnCls('next', '-double')"
                     @click="nextYear"><Icon type="ios-arrow-right"></Icon></span>
@@ -59,9 +59,18 @@
                     :disabled-date="disabledDate"
                     @on-pick="handleMonthPick"
                     @on-pick-click="handlePickClick"></month-table>
+                <time-picker
+                    v-ref:time-picker
+                    show-date
+                    v-show="currentView === 'time'"
+                    @on-pick="handleTimePick"
+                    @on-pick-click="handlePickClick"></time-picker>
             </div>
             <Confirm
                 v-if="confirm"
+                :show-time="showTime"
+                :is-time="isTime"
+                @on-pick-toggle-time="handleToggleTime"
                 @on-pick-clear="handlePickClear"
                 @on-pick-success="handlePickSuccess"></Confirm>
         </div>
@@ -72,30 +81,37 @@
     import DateTable from '../base/date-table.vue';
     import YearTable from '../base/year-table.vue';
     import MonthTable from '../base/month-table.vue';
+    import TimePicker from './time.vue';
     import Confirm from '../base/confirm.vue';
 
     import Mixin from './mixin';
+    import Locale from '../../../mixins/locale';
+
+    import { initTimeDate } from '../util';
 
     const prefixCls = 'ivu-picker-panel';
     const datePrefixCls = 'ivu-date-picker';
 
     export default {
-        mixins: [Mixin],
-        components: { Icon, DateTable, YearTable, MonthTable, Confirm },
+        name: 'DatePicker',
+        mixins: [ Mixin, Locale ],
+        components: { Icon, DateTable, YearTable, MonthTable, TimePicker, Confirm },
         data () {
             return {
                 prefixCls: prefixCls,
                 datePrefixCls: datePrefixCls,
                 shortcuts: [],
                 currentView: 'date',
-                date: new Date(),
+                date: initTimeDate(),
                 value: '',
                 showTime: false,
                 selectionMode: 'day',
                 disabledDate: '',
                 year: null,
                 month: null,
-                confirm: false
+                confirm: false,
+                isTime: false,
+                format: 'yyyy-MM-dd'
             };
         },
         computed: {
@@ -108,13 +124,18 @@
                 ];
             },
             yearLabel () {
+                const tYear = this.t('i.datepicker.year');
                 const year = this.year;
                 if (!year) return '';
                 if (this.currentView === 'year') {
                     const startYear = Math.floor(year / 10) * 10;
-                    return `${startYear}年 - ${startYear + 9}年`;
+                    return `${startYear}${tYear} - ${startYear + 9}${tYear}`;
                 }
-                return `${year}年`;
+                return `${year}${tYear}`;
+            },
+            monthLabel () {
+                const month = this.month + 1;
+                return this.t(`i.datepicker.month${month}`);
             }
         },
         watch: {
@@ -126,27 +147,41 @@
                     this.year = newVal.getFullYear();
                     this.month = newVal.getMonth();
                 }
+                if (this.showTime) this.$refs.timePicker.value = newVal;
+            },
+            date (val) {
+                if (this.showTime) this.$refs.timePicker.date = val;
+            },
+            format (val) {
+                if (this.showTime) this.$refs.timePicker.format = val;
+            },
+            currentView (val) {
+                if (val === 'time') this.$refs.timePicker.updateScroll();
             }
         },
         methods: {
             resetDate () {
                 this.date = new Date(this.date);
             },
-            handleClear() {
+            handleClear () {
                 this.date = new Date();
                 this.$emit('on-pick', '');
+                if (this.showTime) this.$refs.timePicker.handleClear();
             },
-            resetView() {
-                if (this.selectionMode === 'month') {
-                    this.currentView = 'month';
-                } else if (this.selectionMode === 'year') {
-                    this.currentView = 'year';
-                } else {
-                    this.currentView = 'date';
+            resetView (reset = false) {
+                if (this.currentView !== 'time' || reset) {
+                    if (this.selectionMode === 'month') {
+                        this.currentView = 'month';
+                    } else if (this.selectionMode === 'year') {
+                        this.currentView = 'year';
+                    } else {
+                        this.currentView = 'date';
+                    }
                 }
 
                 this.year = this.date.getFullYear();
                 this.month = this.date.getMonth();
+                if (reset) this.isTime = false;
             },
             prevYear () {
                 if (this.currentView === 'year') {
@@ -186,6 +221,15 @@
             showMonthPicker () {
                 this.currentView = 'month';
             },
+            handleToggleTime () {
+                if (this.currentView === 'date') {
+                    this.currentView = 'time';
+                    this.isTime = true;
+                } else if (this.currentView === 'time') {
+                    this.currentView = 'date';
+                    this.isTime = false;
+                }
+            },
             handleYearPick(year, close = true) {
                 this.year = year;
                 if (!close) return;
@@ -216,15 +260,16 @@
             },
             handleDatePick (value) {
                 if (this.selectionMode === 'day') {
-                    if (!this.showTime) {
-                        this.$emit('on-pick', new Date(value.getTime()));
-                    }
+                    this.$emit('on-pick', new Date(value.getTime()));
                     this.date.setFullYear(value.getFullYear());
                     this.date.setMonth(value.getMonth());
                     this.date.setDate(value.getDate());
                 }
 
                 this.resetDate();
+            },
+            handleTimePick (date) {
+                this.handleDatePick(date);
             }
         },
         compiled () {
@@ -235,6 +280,13 @@
             if (this.date && !this.year) {
                 this.year = this.date.getFullYear();
                 this.month = this.date.getMonth();
+            }
+            if (this.showTime) {
+                // todo 这里可能有问题，并不能进入到这里，但不影响正常使用
+                this.$refs.timePicker.date = this.date;
+                this.$refs.timePicker.value = this.value;
+                this.$refs.timePicker.format = this.format;
+                this.$refs.timePicker.showDate = true;
             }
         }
     };

@@ -7,7 +7,7 @@
                 @click="handleShortcutClick(shortcut)">{{ shortcut.text }}</div>
         </div>
         <div :class="[prefixCls + '-body']">
-            <div :class="[prefixCls + '-content', prefixCls + '-content-left']">
+            <div :class="[prefixCls + '-content', prefixCls + '-content-left']" v-show="!isTime">
                 <div :class="[datePrefixCls + '-header']" v-show="leftCurrentView !== 'time'">
                     <span
                         :class="iconBtnCls('prev', '-double')"
@@ -22,7 +22,7 @@
                     <span
                         :class="[datePrefixCls + '-header-label']"
                         @click="showMonthPicker('left')"
-                        v-show="leftCurrentView === 'date'">{{ leftMonth + 1 }} 月</span>
+                        v-show="leftCurrentView === 'date'">{{ leftMonthLabel }}</span>
                     <span
                         :class="iconBtnCls('next', '-double')"
                         @click="nextYear('left')"
@@ -60,7 +60,7 @@
                     @on-pick="handleLeftMonthPick"
                     @on-pick-click="handlePickClick"></month-table>
             </div>
-            <div :class="[prefixCls + '-content', prefixCls + '-content-right']">
+            <div :class="[prefixCls + '-content', prefixCls + '-content-right']" v-show="!isTime">
                 <div :class="[datePrefixCls + '-header']" v-show="rightCurrentView !== 'time'">
                      <span
                          :class="iconBtnCls('prev', '-double')"
@@ -72,7 +72,7 @@
                     <span
                         :class="[datePrefixCls + '-header-label']"
                         @click="showMonthPicker('right')"
-                        v-show="rightCurrentView === 'date'">{{ rightMonth + 1 }} 月</span>
+                        v-show="rightCurrentView === 'date'">{{ rightMonthLabel }}</span>
                     <span
                         :class="iconBtnCls('next', '-double')"
                         @click="nextYear('right')"><Icon type="ios-arrow-right"></Icon></span>
@@ -113,8 +113,19 @@
                     @on-pick="handleRightMonthPick"
                     @on-pick-click="handlePickClick"></month-table>
             </div>
+            <div :class="[prefixCls + '-content']" v-show="isTime">
+                <time-picker
+                    v-ref:time-picker
+                    v-show="isTime"
+                    @on-pick="handleTimePick"
+                    @on-pick-click="handlePickClick"></time-picker>
+            </div>
             <Confirm
                 v-if="confirm"
+                :show-time="showTime"
+                :is-time="isTime"
+                :time-disabled="timeDisabled"
+                @on-pick-toggle-time="handleToggleTime"
                 @on-pick-clear="handlePickClear"
                 @on-pick-success="handlePickSuccess"></Confirm>
         </div>
@@ -125,23 +136,26 @@
     import DateTable from '../base/date-table.vue';
     import YearTable from '../base/year-table.vue';
     import MonthTable from '../base/month-table.vue';
+    import TimePicker from './time-range.vue';
     import Confirm from '../base/confirm.vue';
-    import { toDate, prevMonth, nextMonth } from '../util';
+    import { toDate, prevMonth, nextMonth, initTimeDate } from '../util';
 
     import Mixin from './mixin';
+    import Locale from '../../../mixins/locale';
 
     const prefixCls = 'ivu-picker-panel';
     const datePrefixCls = 'ivu-date-picker';
 
     export default {
-        mixins: [Mixin],
-        components: { Icon, DateTable, YearTable, MonthTable, Confirm },
+        name: 'DatePicker',
+        mixins: [ Mixin, Locale ],
+        components: { Icon, DateTable, YearTable, MonthTable, TimePicker, Confirm },
         data () {
             return {
                 prefixCls: prefixCls,
                 datePrefixCls: datePrefixCls,
                 shortcuts: [],
-                date: new Date(),
+                date: initTimeDate(),
                 value: '',
                 minDate: '',
                 maxDate: '',
@@ -156,7 +170,9 @@
                 rightCurrentView: 'date',
                 selectionMode: 'range',
                 leftTableYear: null,
-                rightTableYear: null
+                rightTableYear: null,
+                isTime: false,
+                format: 'yyyy-MM-dd'
             };
         },
         computed: {
@@ -180,19 +196,24 @@
                 }
             },
             leftYearLabel () {
+                const tYear = this.t('i.datepicker.year');
                 if (this.leftCurrentView === 'year') {
                     const year = this.leftTableYear;
                     if (!year) return '';
                     const startYear = Math.floor(year / 10) * 10;
-                    return `${startYear}年 - ${startYear + 9}年`;
+                    return `${startYear}${tYear} - ${startYear + 9}${tYear}`;
                 } else {
                     const year = this.leftCurrentView === 'month' ? this.leftTableYear : this.leftYear;
                     if (!year) return '';
-                    return `${year}年`;
+                    return `${year}${tYear}`;
                 }
             },
             leftMonth () {
                 return this.date.getMonth();
+            },
+            leftMonthLabel () {
+                const month = this.leftMonth + 1;
+                return this.t(`i.datepicker.month${month}`);
             },
             rightYear () {
                 return this.rightDate.getFullYear();
@@ -205,19 +226,24 @@
                 }
             },
             rightYearLabel () {
+                const tYear = this.t('i.datepicker.year');
                 if (this.rightCurrentView === 'year') {
                     const year = this.rightTableYear;
                     if (!year) return '';
                     const startYear = Math.floor(year / 10) * 10;
-                    return `${startYear}年 - ${startYear + 9}年`;
+                    return `${startYear}${tYear} - ${startYear + 9}${tYear}`;
                 } else {
                     const year = this.rightCurrentView === 'month' ? this.rightTableYear : this.rightYear;
                     if (!year) return '';
-                    return `${year}年`;
+                    return `${year}${tYear}`;
                 }
             },
             rightMonth () {
                 return this.rightDate.getMonth();
+            },
+            rightMonthLabel () {
+                const month = this.rightMonth + 1;
+                return this.t(`i.datepicker.month${month}`);
             },
             rightDate () {
                 const newDate = new Date(this.date);
@@ -231,6 +257,9 @@
                     newDate.setMonth(month + 1);
                 }
                 return newDate;
+            },
+            timeDisabled () {
+                return !(this.minDate && this.maxDate);
             }
         },
         watch: {
@@ -243,6 +272,19 @@
                     this.maxDate = newVal[1] ? toDate(newVal[1]) : null;
                     if (this.minDate) this.date = new Date(this.minDate);
                 }
+                if (this.showTime) this.$refs.timePicker.value = newVal;
+            },
+            minDate (val) {
+                if (this.showTime) this.$refs.timePicker.date = val;
+            },
+            maxDate (val) {
+                if (this.showTime) this.$refs.timePicker.dateEnd = val;
+            },
+            format (val) {
+                if (this.showTime) this.$refs.timePicker.format = val;
+            },
+            isTime (val) {
+                if (val) this.$refs.timePicker.updateScroll();
             }
         },
         methods: {
@@ -256,13 +298,16 @@
                 this.maxDate = null;
                 this.date = new Date();
                 this.handleConfirm();
+                if (this.showTime) this.$refs.timePicker.handleClear();
             },
-            resetView() {
+            resetView(reset = false) {
                 this.leftCurrentView = 'date';
                 this.rightCurrentView = 'date';
 
                 this.leftTableYear = this.leftYear;
                 this.rightTableYear = this.rightYear;
+
+                if (reset) this.isTime = false;
             },
             prevYear (direction) {
                 if (this[`${direction}CurrentView`] === 'year') {
@@ -343,14 +388,33 @@
                 this.maxDate = val.maxDate;
 
                 if (!close) return;
-                if (!this.showTime) {
-                    this.handleConfirm(false);
-                }
+//                if (!this.showTime) {
+//                    this.handleConfirm(false);
+//                }
+                this.handleConfirm(false);
             },
             handleChangeRange (val) {
                 this.minDate = val.minDate;
                 this.maxDate = val.maxDate;
                 this.rangeState = val.rangeState;
+            },
+            handleToggleTime () {
+                this.isTime = !this.isTime;
+            },
+            handleTimePick (date) {
+                this.minDate = date[0];
+                this.maxDate = date[1];
+                this.handleConfirm(false);
+            }
+        },
+        compiled () {
+            if (this.showTime) {
+                // todo 这里也到不了
+                this.$refs.timePicker.date = this.minDate;
+                this.$refs.timePicker.dateEnd = this.maxDate;
+                this.$refs.timePicker.value = this.value;
+                this.$refs.timePicker.format = this.format;
+                this.$refs.timePicker.showDate = true;
             }
         }
     };
