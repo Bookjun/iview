@@ -4,47 +4,55 @@
     </div>
 </template>
 <script>
+    import Emitter from '../../mixins/emitter';
     const prefixCls = 'ivu-checkbox-group';
 
     export default {
-        name: 'checkboxGroup',
+        name: 'CheckboxGroup',
+        mixins: [ Emitter ],
         props: {
-            model: {
+            value: {
                 type: Array,
                 default () {
                     return [];
                 }
             }
         },
+        data () {
+            return {
+                currentValue: this.value
+            };
+        },
         computed: {
             classes () {
                 return `${prefixCls}`;
             }
         },
-        compiled () {
+        mounted () {
             this.updateModel(true);
         },
         methods: {
             updateModel (update) {
-                const model = this.model;
+                const value = this.value;
 
                 this.$children.forEach((child) => {
-                    child.model = model;
+                    child.model = value;
 
                     if (update) {
-                        child.selected = model.indexOf(child.value) >= 0;
+                        child.currentValue = value.indexOf(child.label) >= 0;
                         child.group = true;
                     }
                 });
             },
             change (data) {
-                this.model = data;
+                this.currentValue = data;
+                this.$emit('input', data);
                 this.$emit('on-change', data);
-                this.$dispatch('on-form-change', data);
+                this.dispatch('FormItem', 'on-form-change', data);
             }
         },
         watch: {
-            model () {
+            value () {
                 this.updateModel(true);
             }
         }

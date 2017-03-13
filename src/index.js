@@ -42,7 +42,7 @@ import Tooltip from './components/tooltip';
 import Transfer from './components/transfer';
 import Tree from './components/tree';
 import Upload from './components/upload';
-import { Row, Col } from './components/layout';
+import { Row, Col } from './components/grid';
 import { Select, Option, OptionGroup } from './components/select';
 import locale from './locale';
 
@@ -54,6 +54,7 @@ const iview = {
     Breadcrumb,
     BreadcrumbItem: Breadcrumb.Item,
     iButton: Button,
+    Button,
     ButtonGroup: Button.Group,
     Card,
     Carousel,
@@ -61,7 +62,7 @@ const iview = {
     Cascader,
     Checkbox,
     CheckboxGroup: Checkbox.Group,
-    Circle,
+    iCircle: Circle,
     DatePicker,
     Dropdown,
     DropdownItem: Dropdown.Item,
@@ -71,7 +72,8 @@ const iview = {
     iCol: Col,
     Collapse,
     Icon,
-    iInput: Input,
+    // iInput: Input,
+    Input,
     InputNumber,
     LoadingBar,
     Menu,
@@ -96,8 +98,9 @@ const iview = {
     Spin,
     Step: Steps.Step,
     Steps,
-    Switch,
-    iTable: Table,
+    iSwitch: Switch,
+    // iTable: Table,
+    Table,
     Tabs: Tabs,
     TabPane: Tabs.Pane,
     Tag,

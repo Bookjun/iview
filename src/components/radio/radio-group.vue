@@ -5,13 +5,15 @@
 </template>
 <script>
     import { oneOf } from '../../utils/assist';
+    import Emitter from '../../mixins/emitter';
 
     const prefixCls = 'ivu-radio-group';
 
     export default {
-        name: 'radioGroup',
+        name: 'RadioGroup',
+        mixins: [ Emitter ],
         props: {
-            model: {
+            value: {
                 type: [String, Number],
                 default: ''
             },
@@ -30,6 +32,11 @@
                 default: false
             }
         },
+        data () {
+            return {
+                currentValue: this.value
+            };
+        },
         computed: {
             classes () {
                 return [
@@ -42,27 +49,28 @@
                 ];
             }
         },
-        compiled () {
-            this.updateModel();
+        mounted () {
+            this.updateValue();
         },
         methods: {
-            updateModel () {
-                const model = this.model;
+            updateValue () {
+                const value = this.value;
                 this.$children.forEach((child) => {
-                    child.selected = model == child.value;
+                    child.currentValue = value == child.label;
                     child.group = true;
                 });
             },
             change (data) {
-                this.model = data.value;
-                this.updateModel();
+                this.currentValue = data.value;
+                this.updateValue();
+                this.$emit('input', data.value);
                 this.$emit('on-change', data.value);
-                this.$dispatch('on-form-change', data.value);
+                this.dispatch('FormItem', 'on-form-change', data.value);
             }
         },
         watch: {
-            model () {
-                this.updateModel();
+            value () {
+                this.updateValue();
             }
         }
     };

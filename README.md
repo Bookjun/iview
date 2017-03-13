@@ -6,13 +6,15 @@
 
 # iView  [![](https://img.shields.io/travis/iview/iview.svg?style=flat-square)](https://travis-ci.org/iview/iview) [![iView](https://img.shields.io/npm/v/iview.svg?style=flat-square)](https://www.npmjs.org/package/iview) [![NPM downloads](http://img.shields.io/npm/dm/iview.svg?style=flat-square)](https://npmjs.org/package/iview) [![Join the chat at https://gitter.im/iview/iview](https://badges.gitter.im/iview/iview.svg)](https://gitter.im/iview/iview?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
-### A high quality  UI Components Library with Vue.js
+### A high quality  UI Toolkit with both Vue.js 2.0 and 1.0 
 
-> iView works only with Vue 1.0 currently. We have been in developing. English document is coming soon. Please pay attention to the iView.
+> This branch is for Vue.js 2.x
+>
+> [HERE](https://github.com/iview/iview/tree/master) is for Vue.js 1.x
 
 ## Docs
 
-### [中文文档](https://www.iviewui.com)
+### [中文文档(1.0版)](https://www.iviewui.com)
 ### English (Coming soon)
 
 ## Overview
@@ -25,16 +27,15 @@
 - Friendly APIs,free and flexible
 - Great Documentation
 - It is quite beautiful
-- Using .vue file development mode
+- Support Vue.js 2 and Vue.js 1
 - Based on npm + webpack + babel, using ES2015
 
-## Programming 
-
-![iView](https://raw.githubusercontent.com/iview/iview/master/assets/iview.png)
+## Programming
+![iView](https://raw.githubusercontent.com/iview/iview/2.0/assets/iview2.png)
 
 ## Install
 
-### Install vue-webpack project in the first place 
+### Install vue-webpack project in the first place
 
 Use [iview-project](https://github.com/iview/iview-project)(Recommended) Or [vue-cli](https://github.com/vuejs/vue-cli)
 
@@ -53,7 +54,7 @@ Or using script tag for global use
 
 ```html
 <template>
-    <Slider :value.sync="value" range></Slider>
+    <Slider v-model="value" range></Slider>
 </template>
 <script>
     export default {
