@@ -166,3 +166,50 @@ export function scrollTop(el, from = 0, to, duration = 500) {
     }
     scroll(from, to, step);
 }
+
+// Find components upward
+function findComponentUpward (content, componentName, componentNames) {
+    if (typeof componentName === 'string') {
+        componentNames = [componentName];
+    } else {
+        componentNames = componentName;
+    }
+
+    let parent = content.$parent;
+    let name = parent.$options.name;
+    while (parent && (!name || componentNames.indexOf(name) < 0)) {
+        parent = parent.$parent;
+        if (parent) name = parent.$options.name;
+    }
+    return parent;
+}
+export {findComponentUpward};
+
+// Find components downward
+function findComponentDownward (content, componentName) {
+    let childrens = content.$children;
+    let children = null;
+
+    if (childrens.length) {
+        childrens.forEach(child => {
+            const name = child.$options.name;
+            if (name === componentName) {
+                children = child;
+            }
+        });
+
+        for (let i = 0; i < childrens.length; i++) {
+            const child = childrens[i];
+            const name = child.$options.name;
+            if (name === componentName) {
+                children = child;
+                break;
+            } else {
+                children = findComponentDownward(child, componentName);
+                if (children) break;
+            }
+        }
+    }
+    return children;
+}
+export {findComponentDownward};
