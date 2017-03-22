@@ -75,6 +75,15 @@ import 'iview/dist/styles/iview.css';
 
 Normal browsers and Internet Explorer 9+.
 
+## Major Contributors
+|Name   |Avatar   |
+|---|---|
+|  [Aresn](https://github.com/icarusion) |  ![](https://avatars3.githubusercontent.com/u/5370542?v=3&s=60)  |
+|  [jingsam](https://github.com/jingsam) |  ![](https://avatars3.githubusercontent.com/u/1522494?v=3&s=60)  |  
+|  [rijn](https://github.com/rijn)       |  ![](https://avatars2.githubusercontent.com/u/6976367?v=3&s=60)  |
+|  [GITleonine1989](https://github.com/GITleonine1989) |  ![](https://avatars1.githubusercontent.com/u/7582490?v=3&s=60)  |
+|  [huixisheng](https://github.com/huixisheng) |  ![](https://avatars1.githubusercontent.com/u/1518967?v=3&s=60)  |
+
 ## Links
 
 - [TalkingData](https://github.com/TalkingData)
@@ -83,10 +92,7 @@ Normal browsers and Internet Explorer 9+.
 - [ionicons](https://github.com/driftyco/ionicons)
 - [Ant Design](https://github.com/ant-design/ant-design)
 
-## Related open source projects
-In iView, Some of the components and style codes refer to the following projects:
-- [AntDesign](https://github.com/ant-design/ant-design)
-- [Element](https://github.com/ElemeFE/element)
-- [vue-antd](https://github.com/okoala/vue-antd)
-- [vue-beauty](https://github.com/FE-Driver/vue-beauty)
-- [Vux](https://github.com/airyland/vux)
+## License
+[MIT](http://opensource.org/licenses/MIT)
+
+Copyright (c) 2016-present, iView
